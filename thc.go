@@ -5,7 +5,7 @@
 		clear/reset/delete-all
 */
 
-package thc
+package main
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ type container struct {
 	mut      sync.RWMutex // goroutine safety compliance
 
 	maintainFunc func()
-	maintainWait time.Time
+	maintainWait time.Duration
 }
 
 type Key[T any] struct {
@@ -52,13 +52,14 @@ func (c *container) Len() int {
 }
 
 // Initialize container with a unique identity and fresh dataMap
-func NewTHC(janitor func(), t time.Time) container {
+// as well as a handler function and how often to run that func.
+func NewTHC(handler func(), wait time.Duration) container {
 	return container{
 		identity: uuid.NewString(),
 		data:     make(dataMap),
 
-		maintainFunc: janitor,
-		maintainWait: t,
+		maintainFunc: handler,
+		maintainWait: wait,
 	}
 }
 
