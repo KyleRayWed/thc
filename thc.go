@@ -49,11 +49,11 @@ func (c *container) Len() int {
 	return len(c.data)
 }
 
-type ThcFuncMap map[string]func()
+type FuncMap map[string]func()
 
 // Initialize container with a unique identity and fresh dataMap
 // as well as a handler function that runs after a successful transaction
-func NewTHC(handler ThcFuncMap) container {
+func NewTHC(handler FuncMap) container {
 	return container{
 		identity: uuid.NewString(),
 		data:     make(dataMap),
