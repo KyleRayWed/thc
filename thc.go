@@ -1,7 +1,7 @@
 /*
 	TODO
 		clear/reset/delete-all
-		add context to FuncMap
+		helper functions like helper.RemoveDups() to go into the FuncMap
 */
 
 package thc
