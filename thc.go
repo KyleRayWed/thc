@@ -4,7 +4,7 @@
 		clear/reset/delete-all
 */
 
-package thc
+package main
 
 import (
 	"strconv"
@@ -26,6 +26,9 @@ type container struct {
 	identity string
 	data     dataMap
 	mut      sync.RWMutex // goroutine safety compliance
+
+	maintainFunc func()
+	//maintainWait time.Duration
 }
 
 type Key[T any] struct {
@@ -48,10 +51,14 @@ func (c *container) Len() int {
 }
 
 // Initialize container with a unique identity and fresh dataMap
-func NewTHC() container {
+// as well as a handler function and how often to run that func.
+func NewTHC(handler func()) container {
 	return container{
 		identity: uuid.NewString(),
 		data:     make(dataMap),
+
+		maintainFunc: handler,
+		//maintainWait: wait,
 	}
 }
 
@@ -64,6 +71,9 @@ func Store[T any](c *container, input T) (Key[T], error) {
 			return zero, thc_errs.ErrStoreSelf
 		}
 	}
+
+	// only run if you make it past the error checks
+	defer c.maintainFunc()
 
 	newKey := uuid.NewString()
 
@@ -95,6 +105,9 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 		return zero, thc_errs.ErrConKeyMismatch
 	}
 
+	// only run if you make it past the error checks
+	defer c.maintainFunc()
+
 	c.mut.RLock()
 	defer c.mut.RUnlock()
 
@@ -125,6 +138,9 @@ func Update[T any](c *container, key Key[T], input T) error {
 		return thc_errs.ErrConKeyMismatch
 	}
 
+	// only run if you make it past the error checks
+	defer c.maintainFunc()
+
 	c.mut.Lock()
 	defer c.mut.Unlock()
 
@@ -154,6 +170,9 @@ func Remove[T any](c *container, key *Key[T]) error {
 	if !ok {
 		return thc_errs.ErrMissingValue
 	}
+
+	// only run if you make it past the error checks
+	defer c.maintainFunc()
 
 	key.identity = removedID
 	delete(c.data, key.mapKey)

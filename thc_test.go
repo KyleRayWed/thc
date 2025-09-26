@@ -1,11 +1,11 @@
-package thc
+package main
 
 import (
 	"testing"
 )
 
 func TestStoreFetchUpdateRemove(t *testing.T) {
-	c := NewTHC()
+	c := NewTHC(nil)
 
 	// Store int
 	intKey, err := Store(&c, 42)
@@ -69,8 +69,8 @@ func TestStoreFetchUpdateRemove(t *testing.T) {
 }
 
 func TestIdentityMismatch(t *testing.T) {
-	c1 := NewTHC()
-	c2 := NewTHC()
+	c1 := NewTHC(nil)
+	c2 := NewTHC(nil)
 
 	key, err := Store(&c1, "data")
 	if err != nil {
@@ -95,7 +95,7 @@ func TestIdentityMismatch(t *testing.T) {
 }
 
 func TestStringAndLen(t *testing.T) {
-	c := NewTHC()
+	c := NewTHC(nil)
 
 	if c.Len() != 0 {
 		t.Errorf("expected len=0, got %d", c.Len())
