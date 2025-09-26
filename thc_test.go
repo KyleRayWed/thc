@@ -1,4 +1,4 @@
-package main
+package thc
 
 import (
 	"testing"

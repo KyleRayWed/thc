@@ -3,7 +3,7 @@
 		clear/reset/delete-all
 */
 
-package main
+package thc
 
 import (
 	"strconv"
