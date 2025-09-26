@@ -1,6 +1,5 @@
 /*
 	TODO
-		define enum of errors for consistency
 		container maintainer (take a handler and a time)
 		clear/reset/delete-all
 */
@@ -8,12 +7,12 @@
 package thc
 
 import (
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kyleraywed/thc/thc_errs"
 )
 
 var removedID = uuid.NewString() // so little truly matters
@@ -62,7 +61,7 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	case container:
 		if any(input).(container).identity == c.identity {
 			var zero Key[T]
-			return zero, fmt.Errorf("container may not store itself")
+			return zero, thc_errs.ErrStoreSelf
 		}
 	}
 
@@ -90,10 +89,10 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 	var zero T
 
 	if key.identity == removedID {
-		return zero, fmt.Errorf("deleted value at key")
+		return zero, thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
-		return zero, fmt.Errorf("container/key identity mismatch")
+		return zero, thc_errs.ErrConKeyMismatch
 	}
 
 	c.mut.RLock()
@@ -101,12 +100,12 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 
 	val, ok := c.data[key.mapKey]
 	if !ok {
-		return zero, fmt.Errorf("value not found")
+		return zero, thc_errs.ErrValNotFound
 	}
 
 	casted, ok := val.value.(T)
 	if !ok {
-		return zero, fmt.Errorf("type-casting error")
+		return zero, thc_errs.ErrTypeCast
 	}
 	return casted, nil
 }
@@ -116,14 +115,14 @@ func Update[T any](c *container, key Key[T], input T) error {
 	switch any(input).(type) {
 	case container:
 		if any(input).(container).identity == c.identity {
-			return fmt.Errorf("container may not store itself")
+			return thc_errs.ErrStoreSelf
 		}
 	}
 	if key.identity == removedID {
-		return fmt.Errorf("deleted value at key")
+		return thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
-		return fmt.Errorf("container/key identity mismatch")
+		return thc_errs.ErrConKeyMismatch
 	}
 
 	c.mut.Lock()
@@ -142,10 +141,10 @@ func Update[T any](c *container, key Key[T], input T) error {
 // Delete the value at the key within the container and mark as removed.
 func Remove[T any](c *container, key *Key[T]) error {
 	if key.identity == removedID {
-		return fmt.Errorf("deleted value at key")
+		return thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
-		return fmt.Errorf("container/key identity mismatch")
+		return thc_errs.ErrConKeyMismatch
 	}
 
 	c.mut.Lock()
@@ -153,7 +152,7 @@ func Remove[T any](c *container, key *Key[T]) error {
 
 	_, ok := c.data[key.mapKey]
 	if !ok {
-		return fmt.Errorf("no value to remove at key")
+		return thc_errs.ErrMissingValue
 	}
 
 	key.identity = removedID
