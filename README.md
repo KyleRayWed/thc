@@ -22,10 +22,21 @@ import (
 )
 
 func main() {
-    // Create a new container. Upon every successful transaction, it will print Success.
-    c := thc.NewTHC(func() {
-        fmt.Println("Success.")
-    })
+    // Create a new container. Upon every successful transaction, it will log its success.
+    c := thc.NewTHC(thc.FuncMap{
+		"Store": func() {
+			log.Println("Sucessful store.")
+		},
+		"Fetch": func() {
+			log.Println("Sucessful fetch.")
+		},
+        "Update": func() {
+            log.Println("Sucessful update.")
+        },
+        "Remove": func() {
+            log.Println("Sucessful removal")
+        },
+	})
 
     // Store a string (or anything) in the container, get a key
     k, _ := thc.Store(&c, "hello, world")
