@@ -1,6 +1,7 @@
 /*
 	TODO
 		clear/reset/delete-all
+		add context to FuncMap
 */
 
 package thc
@@ -74,7 +75,9 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	}
 
 	// only run if you make it past the error checks
-	defer c.maintainMap["Store"]()
+	if _, ok := c.maintainMap["Store"]; ok {
+		defer c.maintainMap["Store"]()
+	}
 
 	newKey := uuid.NewString()
 
@@ -107,7 +110,9 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 	}
 
 	// only run if you make it past the error checks
-	defer c.maintainMap["Fetch"]()
+	if _, ok := c.maintainMap["Fetch"]; ok {
+		defer c.maintainMap["Fetch"]()
+	}
 
 	c.mut.RLock()
 	defer c.mut.RUnlock()
@@ -140,7 +145,9 @@ func Update[T any](c *container, key Key[T], input T) error {
 	}
 
 	// only run if you make it past the error checks
-	defer c.maintainMap["Update"]()
+	if _, ok := c.maintainMap["Update"]; ok {
+		defer c.maintainMap["Update"]()
+	}
 
 	c.mut.Lock()
 	defer c.mut.Unlock()
@@ -173,7 +180,9 @@ func Remove[T any](c *container, key *Key[T]) error {
 	}
 
 	// only run if you make it past the error checks
-	defer c.maintainMap["Remove"]()
+	if _, ok := c.maintainMap["Remove"]; ok {
+		defer c.maintainMap["Remove"]()
+	}
 
 	key.identity = removedID
 	delete(c.data, key.mapKey)

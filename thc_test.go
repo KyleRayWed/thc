@@ -1,11 +1,25 @@
 package thc
 
 import (
+	"log"
 	"testing"
 )
 
 func TestStoreFetchUpdateRemove(t *testing.T) {
-	c := NewTHC(nil)
+	c := NewTHC(FuncMap{
+		"Store": func() {
+			log.Println("Sucessful store.")
+		},
+		"Fetch": func() {
+			log.Println("Sucessful fetch.")
+		},
+		"Update": func() {
+			log.Println("Sucessful update.")
+		},
+		"Remove": func() {
+			log.Println("Sucessful removal.")
+		},
+	})
 
 	// Store int
 	intKey, err := Store(&c, 42)
