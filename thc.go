@@ -1,3 +1,10 @@
+/*
+	TODO
+		define enum of errors for consistency
+		container maintainer (take a handler and a time)
+		clear/reset/delete-all
+*/
+
 package thc
 
 import (
