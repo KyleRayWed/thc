@@ -34,7 +34,7 @@ func main() {
             log.Println("Sucessful update.")
         },
         "Remove": func() {
-            log.Println("Sucessful removal")
+            log.Println("Sucessful removal.")
         },
 	})
 
