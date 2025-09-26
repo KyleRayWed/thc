@@ -75,8 +75,8 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	}
 
 	// only run if you make it past the error checks
-	if _, ok := c.maintainMap["Store"]; ok {
-		defer c.maintainMap["Store"]()
+	if fn, ok := c.maintainMap["Store"]; ok {
+		defer fn()
 	}
 
 	newKey := uuid.NewString()
@@ -110,8 +110,8 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 	}
 
 	// only run if you make it past the error checks
-	if _, ok := c.maintainMap["Fetch"]; ok {
-		defer c.maintainMap["Fetch"]()
+	if fn, ok := c.maintainMap["Fetch"]; ok {
+		defer fn()
 	}
 
 	c.mut.RLock()
@@ -145,8 +145,8 @@ func Update[T any](c *container, key Key[T], input T) error {
 	}
 
 	// only run if you make it past the error checks
-	if _, ok := c.maintainMap["Update"]; ok {
-		defer c.maintainMap["Update"]()
+	if fn, ok := c.maintainMap["Update"]; ok {
+		defer fn()
 	}
 
 	c.mut.Lock()
@@ -180,8 +180,8 @@ func Remove[T any](c *container, key *Key[T]) error {
 	}
 
 	// only run if you make it past the error checks
-	if _, ok := c.maintainMap["Remove"]; ok {
-		defer c.maintainMap["Remove"]()
+	if fn, ok := c.maintainMap["Remove"]; ok {
+		defer fn()
 	}
 
 	key.identity = removedID
