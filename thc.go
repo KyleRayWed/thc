@@ -16,6 +16,8 @@ import (
 
 var removedID = uuid.NewString() // so little truly matters
 
+type FuncMap map[string]func()
+
 type dataMap map[string]struct {
 	value        any
 	timeModified time.Time
@@ -26,7 +28,7 @@ type container struct {
 	data     dataMap
 	mut      sync.RWMutex // goroutine safety compliance
 
-	maintainMap map[string]func()
+	maintainMap FuncMap
 	//maintainWait time.Duration
 }
 
@@ -48,8 +50,6 @@ func (c *container) Len() int {
 	defer c.mut.RUnlock()
 	return len(c.data)
 }
-
-type FuncMap map[string]func()
 
 // Initialize container with a unique identity and fresh dataMap
 // as well as a handler function that runs after a successful transaction
