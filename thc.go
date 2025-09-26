@@ -27,6 +27,9 @@ type container struct {
 	identity string
 	data     dataMap
 	mut      sync.RWMutex // goroutine safety compliance
+
+	maintainFunc func()
+	maintainWait time.Time
 }
 
 type Key[T any] struct {
@@ -49,10 +52,13 @@ func (c *container) Len() int {
 }
 
 // Initialize container with a unique identity and fresh dataMap
-func NewTHC() container {
+func NewTHC(janitor func(), t time.Time) container {
 	return container{
 		identity: uuid.NewString(),
 		data:     make(dataMap),
+
+		maintainFunc: janitor,
+		maintainWait: t,
 	}
 }
 
