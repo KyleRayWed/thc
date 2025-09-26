@@ -26,7 +26,7 @@ type container struct {
 	data     dataMap
 	mut      sync.RWMutex // goroutine safety compliance
 
-	maintainFunc func()
+	maintainMap map[string]func()
 	//maintainWait time.Duration
 }
 
@@ -51,12 +51,12 @@ func (c *container) Len() int {
 
 // Initialize container with a unique identity and fresh dataMap
 // as well as a handler function that runs after a successful transaction
-func NewTHC(handler func()) container {
+func NewTHC(handler map[string]func()) container {
 	return container{
 		identity: uuid.NewString(),
 		data:     make(dataMap),
 
-		maintainFunc: handler,
+		maintainMap: handler,
 		//maintainWait: wait,
 	}
 }
@@ -72,7 +72,7 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	}
 
 	// only run if you make it past the error checks
-	defer c.maintainFunc()
+	defer c.maintainMap["Store"]()
 
 	newKey := uuid.NewString()
 
@@ -105,7 +105,7 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 	}
 
 	// only run if you make it past the error checks
-	defer c.maintainFunc()
+	defer c.maintainMap["Fetch"]()
 
 	c.mut.RLock()
 	defer c.mut.RUnlock()
@@ -138,7 +138,7 @@ func Update[T any](c *container, key Key[T], input T) error {
 	}
 
 	// only run if you make it past the error checks
-	defer c.maintainFunc()
+	defer c.maintainMap["Update"]()
 
 	c.mut.Lock()
 	defer c.mut.Unlock()
@@ -171,7 +171,7 @@ func Remove[T any](c *container, key *Key[T]) error {
 	}
 
 	// only run if you make it past the error checks
-	defer c.maintainFunc()
+	defer c.maintainMap["Remove"]()
 
 	key.identity = removedID
 	delete(c.data, key.mapKey)
