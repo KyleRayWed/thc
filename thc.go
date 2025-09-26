@@ -1,6 +1,5 @@
 /*
 	TODO
-		container maintainer (take a handler and a time)
 		clear/reset/delete-all
 */
 
@@ -51,7 +50,7 @@ func (c *container) Len() int {
 }
 
 // Initialize container with a unique identity and fresh dataMap
-// as well as a handler function and how often to run that func.
+// as well as a handler function that runs after a successful transaction
 func NewTHC(handler func()) container {
 	return container{
 		identity: uuid.NewString(),

@@ -3,7 +3,7 @@
 A small (**t**)ype-safe, (**h**)eterogeneous (**c**)ontainer. It allows you to store values, retrieve those values with typed keys, and delete stored values safely.
 
 ```go
-func NewTHC() thc_container
+func NewTHC(handler func()) container
 
 func Store[T any](container *thc_container, input T) (thc_key[T], error)
 func Fetch[T any](container *thc_container, key thc_key[T]) (T, error)
@@ -22,8 +22,10 @@ import (
 )
 
 func main() {
-    // Create a new container
-    c := thc.NewTHC()
+    // Create a new container. Upon every successful transaction, it will print Success.
+    c := thc.NewTHC(func() {
+        fmt.Println("Success.")
+    })
 
     // Store a string (or anything) in the container, get a key
     k, _ := thc.Store(&c, "hello, world")
