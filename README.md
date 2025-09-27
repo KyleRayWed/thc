@@ -17,7 +17,7 @@ Usage
 package main
 
 import (
-    "fmt"
+    "log"
     "github.com/kyleraywed/thc"
 )
 

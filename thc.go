@@ -14,8 +14,6 @@ import (
 	"github.com/kyleraywed/thc/thc_errs"
 )
 
-var removedID = uuid.NewString() // so little truly matters
-
 type FuncMap map[string]func()
 
 type dataMap map[string]struct {
@@ -24,9 +22,10 @@ type dataMap map[string]struct {
 }
 
 type container struct {
-	identity string
-	data     dataMap
-	mut      sync.RWMutex // goroutine safety compliance
+	identity  string
+	removedID string
+	data      dataMap
+	mut       sync.RWMutex // goroutine safety compliance
 
 	maintainMap FuncMap
 	//maintainWait time.Duration
@@ -51,12 +50,13 @@ func (c *container) Len() int {
 	return len(c.data)
 }
 
-// Initialize container with a unique identity and fresh dataMap
-// as well as a handler function that runs after a successful transaction
+// Initialize container with a unique identity and fresh dataMap as well as
+// a handler function that gets called after a successful transaction.
 func NewTHC(handler FuncMap) container {
 	return container{
-		identity: uuid.NewString(),
-		data:     make(dataMap),
+		identity:  uuid.NewString(),
+		removedID: uuid.NewString(),
+		data:      make(dataMap),
 
 		maintainMap: handler,
 		//maintainWait: wait,
@@ -99,7 +99,7 @@ func Store[T any](c *container, input T) (Key[T], error) {
 func Fetch[T any](c *container, key Key[T]) (T, error) {
 	var zero T
 
-	if key.identity == removedID {
+	if key.identity == c.removedID {
 		return zero, thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
@@ -135,7 +135,7 @@ func Update[T any](c *container, key Key[T], input T) error {
 			return thc_errs.ErrStoreSelf
 		}
 	}
-	if key.identity == removedID {
+	if key.identity == c.removedID {
 		return thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
@@ -160,7 +160,7 @@ func Update[T any](c *container, key Key[T], input T) error {
 
 // Delete the value at the key within the container and mark as removed.
 func Remove[T any](c *container, key *Key[T]) error {
-	if key.identity == removedID {
+	if key.identity == c.removedID {
 		return thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
@@ -180,7 +180,7 @@ func Remove[T any](c *container, key *Key[T]) error {
 		defer fn()
 	}
 
-	key.identity = removedID
+	key.identity = c.removedID
 	delete(c.data, key.mapKey)
 
 	return nil
