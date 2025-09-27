@@ -2,7 +2,6 @@
 	TODO
 		clear/reset/delete-all
 		helper functions like helper.RemoveDups() to go into the FuncMap
-		consider using weak pointers for keys. instead of marking as removed, i could just do a nil check 
 */
 
 package thc
