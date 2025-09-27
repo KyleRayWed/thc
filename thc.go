@@ -18,7 +18,7 @@ type FuncMap map[string]func()
 
 type dataMap map[string]struct {
 	value any
-	// time?
+	// time, and other vague concepts
 }
 
 type container struct {
@@ -28,7 +28,6 @@ type container struct {
 	mut       sync.RWMutex // goroutine safety compliance
 
 	maintainMap FuncMap
-	//maintainWait time.Duration
 }
 
 type Key[T any] struct {
@@ -59,7 +58,6 @@ func NewTHC(handler FuncMap) container {
 		data:      make(dataMap),
 
 		maintainMap: handler,
-		//maintainWait: wait,
 	}
 }
 
