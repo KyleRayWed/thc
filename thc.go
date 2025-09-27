@@ -110,11 +110,6 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 		return zero, thc_errs.ErrConKeyMismatch
 	}
 
-	// only run if you make it past the error checks
-	if fn, ok := c.maintainMap["Fetch"]; ok {
-		defer fn()
-	}
-
 	c.mut.RLock()
 	defer c.mut.RUnlock()
 
@@ -127,6 +122,12 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 	if !ok {
 		return zero, thc_errs.ErrTypeCast
 	}
+
+	// only run if you make it past the error checks
+	if fn, ok := c.maintainMap["Fetch"]; ok {
+		defer fn()
+	}
+
 	return casted, nil
 }
 
