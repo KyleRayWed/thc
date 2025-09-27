@@ -9,7 +9,6 @@ package thc
 import (
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/kyleraywed/thc/thc_errs"
@@ -20,8 +19,8 @@ var removedID = uuid.NewString() // so little truly matters
 type FuncMap map[string]func()
 
 type dataMap map[string]struct {
-	value        any
-	timeModified time.Time
+	value any
+	// time?
 }
 
 type container struct {
@@ -85,11 +84,9 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	defer c.mut.Unlock()
 
 	c.data[newKey] = struct {
-		value        any
-		timeModified time.Time
+		value any
 	}{
-		value:        input,
-		timeModified: time.Now(),
+		value: input,
 	}
 
 	return Key[T]{
@@ -154,11 +151,9 @@ func Update[T any](c *container, key Key[T], input T) error {
 	defer c.mut.Unlock()
 
 	c.data[key.mapKey] = struct {
-		value        any
-		timeModified time.Time
+		value any
 	}{
-		value:        input,
-		timeModified: time.Now(),
+		value: input,
 	}
 	return nil
 }
