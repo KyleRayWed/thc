@@ -10,8 +10,6 @@ import (
 
 type FuncMap map[string]func()
 
-// dataMap is now just a sync.Map
-// Keys are strings, values are stored as any
 type container struct {
 	identity  string
 	removedID string
