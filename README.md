@@ -6,7 +6,7 @@ A small (**t**)ype-safe, (**h**)eterogeneous (**c**)ontainer. It allows you to s
 // Container constructor. Handler's keys are strings and correpsond with
 // the 4 transactions. Don't forget to capitalize. Func is run only on
 // sucessful transaction.
-func NewTHC(handler func()) container
+func NewTHC(handler FuncMap) container
 
 // Store a value, get a key
 func Store[T any](c *container, input T) (Key[T], error)
