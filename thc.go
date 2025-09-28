@@ -40,7 +40,9 @@ func (c *container) String() string {
 	return "Length: " + strconv.Itoa(c.Len())
 }
 
-// Initialize container
+// Container constructor. Handler's keys are strings and correpsond with
+// the 4 transactions. Don't forget to capitalize. Func is run only on
+// sucessful transaction.
 func NewTHC(handler FuncMap) container {
 	return container{
 		identity:    uuid.NewString(),
@@ -49,7 +51,7 @@ func NewTHC(handler FuncMap) container {
 	}
 }
 
-// Store a value
+// Store a value, get a key
 func Store[T any](c *container, input T) (Key[T], error) {
 	switch any(input).(type) {
 	case container:
@@ -69,7 +71,7 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	return Key[T]{identity: c.identity, mapKey: newKey}, nil
 }
 
-// Fetch a value
+// Fetch a value with key, get type-casted value
 func Fetch[T any](c *container, key Key[T]) (T, error) {
 	var zero T
 
@@ -97,7 +99,7 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 	return casted, nil
 }
 
-// Update a value
+// Update a value (must be same type)
 func Update[T any](c *container, key Key[T], input T) error {
 	switch any(input).(type) {
 	case container:
@@ -122,7 +124,7 @@ func Update[T any](c *container, key Key[T], input T) error {
 	return nil
 }
 
-// Remove a value
+// Remove a value, invalidate key
 func Remove[T any](c *container, key *Key[T]) error {
 	if key.identity == c.removedID {
 		return thc_errs.ErrDeletedValue
