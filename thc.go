@@ -71,11 +71,6 @@ func Store[T any](c *container, input T) (Key[T], error) {
 		}
 	}
 
-	// only run if you make it past the error checks
-	if fn, ok := c.maintainMap["Store"]; ok {
-		defer fn()
-	}
-
 	newKey := uuid.NewString()
 
 	c.mut.Lock()
@@ -85,6 +80,11 @@ func Store[T any](c *container, input T) (Key[T], error) {
 		value any
 	}{
 		value: input,
+	}
+
+	// only run if you make it past the error checks, defer not necessary
+	if fn, ok := c.maintainMap["Store"]; ok {
+		fn()
 	}
 
 	return Key[T]{
@@ -117,9 +117,9 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 		return zero, thc_errs.ErrTypeCast
 	}
 
-	// only run if you make it past the error checks
+	// only run if you make it past the error checks, defer not necessary
 	if fn, ok := c.maintainMap["Fetch"]; ok {
-		defer fn()
+		fn()
 	}
 
 	return casted, nil
@@ -140,11 +140,6 @@ func Update[T any](c *container, key Key[T], input T) error {
 		return thc_errs.ErrConKeyMismatch
 	}
 
-	// only run if you make it past the error checks
-	if fn, ok := c.maintainMap["Update"]; ok {
-		defer fn()
-	}
-
 	c.mut.Lock()
 	defer c.mut.Unlock()
 
@@ -153,6 +148,12 @@ func Update[T any](c *container, key Key[T], input T) error {
 	}{
 		value: input,
 	}
+
+	// only run if you make it past the error checks, defer not necessary
+	if fn, ok := c.maintainMap["Update"]; ok {
+		fn()
+	}
+
 	return nil
 }
 
@@ -173,13 +174,12 @@ func Remove[T any](c *container, key *Key[T]) error {
 		return thc_errs.ErrMissingValue
 	}
 
-	// only run if you make it past the error checks
-	if fn, ok := c.maintainMap["Remove"]; ok {
-		defer fn()
-	}
-
 	key.identity = c.removedID
 	delete(c.data, key.mapKey)
 
+	// only run if you make it past the error checks, defer not necessary
+	if fn, ok := c.maintainMap["Remove"]; ok {
+		fn()
+	}
 	return nil
 }
