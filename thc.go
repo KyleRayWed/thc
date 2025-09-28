@@ -1,9 +1,3 @@
-/*
-	TODO
-		clear/reset/delete-all
-		helper functions like helper.RemoveDups() to go into the FuncMap
-*/
-
 package thc
 
 import (
@@ -16,16 +10,12 @@ import (
 
 type FuncMap map[string]func()
 
-type dataMap map[string]struct {
-	value any
-	// time, and other vague concepts
-}
-
+// dataMap is now just a sync.Map
+// Keys are strings, values are stored as any
 type container struct {
 	identity  string
 	removedID string
-	data      dataMap
-	mut       sync.RWMutex // goroutine safety compliance
+	data      sync.Map // concurrent safe map
 
 	maintainMap FuncMap
 }
@@ -35,33 +25,31 @@ type Key[T any] struct {
 	mapKey   string
 }
 
-// Number of records in the underlying map as a string
-func (c *container) String() string {
-	c.mut.RLock()
-	defer c.mut.RUnlock()
-	return "Length: " + strconv.Itoa(len(c.data))
-}
-
 // Number of records in the underlying map
 func (c *container) Len() int {
-	c.mut.RLock()
-	defer c.mut.RUnlock()
-	return len(c.data)
+	count := 0
+	c.data.Range(func(_, _ any) bool {
+		count++
+		return true
+	})
+	return count
 }
 
-// Initialize container with a unique identity and fresh dataMap as well as
-// a handler function that gets called after a successful transaction.
+// String representation
+func (c *container) String() string {
+	return "Length: " + strconv.Itoa(c.Len())
+}
+
+// Initialize container
 func NewTHC(handler FuncMap) container {
 	return container{
-		identity:  uuid.NewString(),
-		removedID: uuid.NewString(),
-		data:      make(dataMap),
-
+		identity:    uuid.NewString(),
+		removedID:   uuid.NewString(),
 		maintainMap: handler,
 	}
 }
 
-// Create a key that has an instantiated type of the input itself.
+// Store a value
 func Store[T any](c *container, input T) (Key[T], error) {
 	switch any(input).(type) {
 	case container:
@@ -72,28 +60,16 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	}
 
 	newKey := uuid.NewString()
+	c.data.Store(newKey, input)
 
-	c.mut.Lock()
-	defer c.mut.Unlock()
-
-	c.data[newKey] = struct {
-		value any
-	}{
-		value: input,
-	}
-
-	// only run if you make it past the error checks, defer not necessary
 	if fn, ok := c.maintainMap["Store"]; ok {
 		fn()
 	}
 
-	return Key[T]{
-		identity: c.identity,
-		mapKey:   newKey,
-	}, nil
+	return Key[T]{identity: c.identity, mapKey: newKey}, nil
 }
 
-// Return the value at the key within the container, typecasted the type of the key.
+// Fetch a value
 func Fetch[T any](c *container, key Key[T]) (T, error) {
 	var zero T
 
@@ -104,20 +80,16 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 		return zero, thc_errs.ErrConKeyMismatch
 	}
 
-	c.mut.RLock()
-	defer c.mut.RUnlock()
-
-	val, ok := c.data[key.mapKey]
+	val, ok := c.data.Load(key.mapKey)
 	if !ok {
 		return zero, thc_errs.ErrValNotFound
 	}
 
-	casted, ok := val.value.(T)
+	casted, ok := val.(T)
 	if !ok {
 		return zero, thc_errs.ErrTypeCast
 	}
 
-	// only run if you make it past the error checks, defer not necessary
 	if fn, ok := c.maintainMap["Fetch"]; ok {
 		fn()
 	}
@@ -125,7 +97,7 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 	return casted, nil
 }
 
-// Update the value at the key within the container. Types must match.
+// Update a value
 func Update[T any](c *container, key Key[T], input T) error {
 	switch any(input).(type) {
 	case container:
@@ -133,6 +105,7 @@ func Update[T any](c *container, key Key[T], input T) error {
 			return thc_errs.ErrStoreSelf
 		}
 	}
+
 	if key.identity == c.removedID {
 		return thc_errs.ErrDeletedValue
 	}
@@ -140,16 +113,8 @@ func Update[T any](c *container, key Key[T], input T) error {
 		return thc_errs.ErrConKeyMismatch
 	}
 
-	c.mut.Lock()
-	defer c.mut.Unlock()
+	c.data.Store(key.mapKey, input)
 
-	c.data[key.mapKey] = struct {
-		value any
-	}{
-		value: input,
-	}
-
-	// only run if you make it past the error checks, defer not necessary
 	if fn, ok := c.maintainMap["Update"]; ok {
 		fn()
 	}
@@ -157,7 +122,7 @@ func Update[T any](c *container, key Key[T], input T) error {
 	return nil
 }
 
-// Delete the value at the key within the container and mark as removed.
+// Remove a value
 func Remove[T any](c *container, key *Key[T]) error {
 	if key.identity == c.removedID {
 		return thc_errs.ErrDeletedValue
@@ -166,20 +131,17 @@ func Remove[T any](c *container, key *Key[T]) error {
 		return thc_errs.ErrConKeyMismatch
 	}
 
-	c.mut.Lock()
-	defer c.mut.Unlock()
-
-	_, ok := c.data[key.mapKey]
+	_, ok := c.data.Load(key.mapKey)
 	if !ok {
 		return thc_errs.ErrMissingValue
 	}
 
 	key.identity = c.removedID
-	delete(c.data, key.mapKey)
+	c.data.Delete(key.mapKey)
 
-	// only run if you make it past the error checks, defer not necessary
 	if fn, ok := c.maintainMap["Remove"]; ok {
 		fn()
 	}
+
 	return nil
 }
