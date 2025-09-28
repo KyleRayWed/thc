@@ -3,12 +3,22 @@
 A small (**t**)ype-safe, (**h**)eterogeneous (**c**)ontainer. It allows you to store values, retrieve those values with typed keys, and delete stored values safely.
 
 ```go
+// Container constructor. Handler's keys are strings and correpsond with
+// the 4 transactions. Don't forget to capitalize. Func is run only on
+// sucessful transaction.
 func NewTHC(handler func()) container
 
-func Store[T any](container *thc_container, input T) (thc_key[T], error)
-func Fetch[T any](container *thc_container, key thc_key[T]) (T, error)
-func Update[T any](container *thc_container, key thc_key[T], input T) error
-func Remove[T](container *thc_container, key *thc_key[T]) error
+// Store a value, get a key
+func Store[T any](c *container, input T) (Key[T], error)
+
+// Fetch a value with key, get type-casted value
+func Fetch[T any](c *container, key Key[T]) (T, error)
+
+// Update a value (must be same type)
+func Update[T any](c *container, key Key[T], input T) error
+
+// Remove a value, invalidate key
+func Remove[T any](c *container, key *Key[T]) error
 ```
 
 Usage
@@ -59,4 +69,4 @@ Notes and design
 
 - Attempting to use a key on a container it isn't associated with will result in error.
 - Attempting to store a container within itself will result in error.
-- Goroutine safe.
+- Underlying container is a sync.Map, making this concurrency safe.
