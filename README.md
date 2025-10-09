@@ -4,7 +4,7 @@ A small (**t**)ype-safe, (**h**)eterogeneous (**c**)ontainer. It allows you to s
 
 ```go
 // Container constructor. Handler's keys are strings and correpsond with
-// the 4 transactions. Don't forget to capitalize. Func is run only on
+// the 4 transactions. Don't forget to capitalize. Handler is run only on
 // sucessful transaction.
 func NewTHC(handler FuncMap) container
 
