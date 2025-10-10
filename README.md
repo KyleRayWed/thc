@@ -3,7 +3,7 @@
 A small (**t**)ype-safe, (**h**)eterogeneous (**c**)ontainer. It allows you to store values, retrieve those values with typed keys, and delete stored values safely.
 
 ```go
-// Container constructor. Handler's keys are strings and correpsond with
+// Container constructor. Handler's keys are strings that correpsond with
 // the 4 transactions. Don't forget to capitalize. Handler is run only on
 // sucessful transaction.
 func NewTHC(handler FuncMap) container

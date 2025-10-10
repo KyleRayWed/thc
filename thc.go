@@ -15,7 +15,7 @@ type container struct {
 	removedID string
 	data      sync.Map // concurrent safe map
 
-	maintainMap FuncMap
+	auditHook FuncMap
 }
 
 type Key[T any] struct {
@@ -41,11 +41,11 @@ func (c *container) String() string {
 // Container constructor. Handler's keys are strings and correpsond with
 // the 4 transactions. Don't forget to capitalize. Func is run only on
 // sucessful transaction.
-func NewTHC(handler FuncMap) container {
-	return container{
-		identity:    uuid.NewString(),
-		removedID:   uuid.NewString(),
-		maintainMap: handler,
+func NewTHC(handler FuncMap) *container {
+	return &container{
+		identity:  uuid.NewString(),
+		removedID: uuid.NewString(),
+		auditHook: handler,
 	}
 }
 
@@ -62,7 +62,7 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	newKey := uuid.NewString()
 	c.data.Store(newKey, input)
 
-	if fn, ok := c.maintainMap["Store"]; ok {
+	if fn, ok := c.auditHook["Store"]; ok {
 		fn()
 	}
 
@@ -77,7 +77,7 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 		return zero, thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
-		return zero, thc_errs.ErrConKeyMismatch
+		return zero, thc_errs.ErrIdentMismatch
 	}
 
 	val, ok := c.data.Load(key.mapKey)
@@ -90,7 +90,7 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 		return zero, thc_errs.ErrTypeCast
 	}
 
-	if fn, ok := c.maintainMap["Fetch"]; ok {
+	if fn, ok := c.auditHook["Fetch"]; ok {
 		fn()
 	}
 
@@ -110,12 +110,12 @@ func Update[T any](c *container, key Key[T], input T) error {
 		return thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
-		return thc_errs.ErrConKeyMismatch
+		return thc_errs.ErrIdentMismatch
 	}
 
 	c.data.Store(key.mapKey, input)
 
-	if fn, ok := c.maintainMap["Update"]; ok {
+	if fn, ok := c.auditHook["Update"]; ok {
 		fn()
 	}
 
@@ -128,7 +128,7 @@ func Remove[T any](c *container, key *Key[T]) error {
 		return thc_errs.ErrDeletedValue
 	}
 	if c.identity != key.identity {
-		return thc_errs.ErrConKeyMismatch
+		return thc_errs.ErrIdentMismatch
 	}
 
 	_, ok := c.data.Load(key.mapKey)
@@ -139,7 +139,7 @@ func Remove[T any](c *container, key *Key[T]) error {
 	key.identity = c.removedID
 	c.data.Delete(key.mapKey)
 
-	if fn, ok := c.maintainMap["Remove"]; ok {
+	if fn, ok := c.auditHook["Remove"]; ok {
 		fn()
 	}
 
