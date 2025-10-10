@@ -13,7 +13,8 @@ type FuncMap map[string]func()
 type container struct {
 	identity  string
 	removedID string
-	data      sync.Map // concurrent safe map
+	data      map[string]any
+	mu        sync.RWMutex
 
 	auditHook FuncMap
 }
@@ -25,12 +26,9 @@ type Key[T any] struct {
 
 // Number of records in the underlying map
 func (c *container) Len() int {
-	count := 0
-	c.data.Range(func(_, _ any) bool {
-		count++
-		return true
-	})
-	return count
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.data)
 }
 
 // String representation
@@ -38,13 +36,12 @@ func (c *container) String() string {
 	return "Length: " + strconv.Itoa(c.Len())
 }
 
-// Container constructor. Handler's keys are strings and correpsond with
-// the 4 transactions. Don't forget to capitalize. Func is run only on
-// sucessful transaction.
+// Container constructor
 func NewTHC(handler FuncMap) *container {
 	return &container{
 		identity:  uuid.NewString(),
 		removedID: uuid.NewString(),
+		data:      make(map[string]any),
 		auditHook: handler,
 	}
 }
@@ -60,7 +57,10 @@ func Store[T any](c *container, input T) (Key[T], error) {
 	}
 
 	newKey := uuid.NewString()
-	c.data.Store(newKey, input)
+
+	c.mu.Lock()
+	c.data[newKey] = input
+	c.mu.Unlock()
 
 	if fn, ok := c.auditHook["Store"]; ok {
 		fn()
@@ -80,7 +80,9 @@ func Fetch[T any](c *container, key Key[T]) (T, error) {
 		return zero, thc_errs.ErrIdentMismatch
 	}
 
-	val, ok := c.data.Load(key.mapKey)
+	c.mu.RLock()
+	val, ok := c.data[key.mapKey]
+	c.mu.RUnlock()
 	if !ok {
 		return zero, thc_errs.ErrValNotFound
 	}
@@ -113,7 +115,9 @@ func Update[T any](c *container, key Key[T], input T) error {
 		return thc_errs.ErrIdentMismatch
 	}
 
-	c.data.Store(key.mapKey, input)
+	c.mu.Lock()
+	c.data[key.mapKey] = input
+	c.mu.Unlock()
 
 	if fn, ok := c.auditHook["Update"]; ok {
 		fn()
@@ -131,13 +135,16 @@ func Remove[T any](c *container, key *Key[T]) error {
 		return thc_errs.ErrIdentMismatch
 	}
 
-	_, ok := c.data.Load(key.mapKey)
+	c.mu.Lock()
+	_, ok := c.data[key.mapKey]
 	if !ok {
+		c.mu.Unlock()
 		return thc_errs.ErrMissingValue
 	}
+	delete(c.data, key.mapKey)
+	c.mu.Unlock()
 
 	key.identity = c.removedID
-	c.data.Delete(key.mapKey)
 
 	if fn, ok := c.auditHook["Remove"]; ok {
 		fn()
