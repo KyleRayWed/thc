@@ -36,7 +36,7 @@ func (c *container) String() string {
 	return "Length: " + strconv.Itoa(c.Len())
 }
 
-// Container constructor
+// Initialize identities, underlying map, and auditHook handler.
 func NewTHC(handler FuncMap) *container {
 	return &container{
 		identity:  uuid.NewString(),
@@ -134,6 +134,7 @@ func Remove[T any](c *container, key *Key[T]) error {
 	if c.identity != key.identity {
 		return thc_errs.ErrIdentMismatch
 	}
+
 
 	c.mu.Lock()
 	_, ok := c.data[key.mapKey]

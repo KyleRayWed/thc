@@ -6,7 +6,7 @@ A small (**t**)ype-safe, (**h**)eterogeneous (**c**)ontainer. It allows you to s
 // Container constructor. Handler's keys are strings that correpsond with
 // the 4 transactions. Don't forget to capitalize. Handler is run only on
 // sucessful transaction.
-func NewTHC(handler FuncMap) container
+func NewTHC(handler FuncMap) *container
 
 // Store a value, get a key
 func Store[T any](c *container, input T) (Key[T], error)
@@ -49,17 +49,17 @@ func main() {
 	})
 
     // Store a string (or anything) in the container, get a key
-    k, _ := thc.Store(&c, "hello, world")
+    k, _ := thc.Store(c, "hello, world")
 
     // Use the key to Fetch the value back
-    v, _ := thc.Fetch(&c, k)
+    v, _ := thc.Fetch(c, k)
     fmt.Println("value:", v)
 
     // Update value (must be same type)
-    thc.Update(&c, k, "goodbye, world")
+    thc.Update(c, k, "goodbye, world")
 
     // Delete value and invalidate key
-    if err := thc.Remove(&c, &k); err != nil {
+    if err := thc.Remove(c, &k); err != nil {
         panic(err)
     }
 }
